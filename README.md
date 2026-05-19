@@ -1,36 +1,38 @@
 # Mermaid Markdown Server
 
-A VS Code extension that starts a local web server for previewing Markdown files with Mermaid diagrams.
+中文 | [English](./README.en.md)
 
-## Features
+一个 VS Code 插件，用本地 Web 服务预览 Markdown 文件，并渲染其中的 Mermaid 图表。
 
-- Open a browser preview from a Markdown editor or right-click menu.
-- Render normal Markdown and fenced `mermaid` code blocks.
-- Share the preview on your LAN through `0.0.0.0` binding.
-- Stop, reopen, and copy the LAN URL from VS Code commands.
-- Keep a standalone CLI entry for quick local testing.
+## 功能
 
-## VS Code Usage
+- 从 Markdown 编辑器或右键菜单一键打开浏览器预览。
+- 渲染普通 Markdown 和 fenced `mermaid` 代码块。
+- 通过 `0.0.0.0` 绑定把预览地址分享给同一局域网的人。
+- 支持停止服务、重新打开预览、复制局域网访问地址。
+- 保留独立 CLI，方便本地调试。
 
-1. Open a `.md` file in VS Code.
-2. Run `Mermaid Markdown Server: Open Preview` from the Command Palette.
-3. Or right-click inside a Markdown editor and choose `Mermaid Markdown Server: Open Preview`.
-4. Open the local URL shown by VS Code.
-5. Use `Mermaid Markdown Server: Stop Preview` when finished.
+## 使用方式
 
-By default, the extension starts:
+1. 在 VS Code 中打开一个 `.md` 文件。
+2. 从命令面板运行 `Mermaid Markdown Server: Open Preview`。
+3. 或者在 Markdown 编辑器里右键，选择 `Mermaid Markdown Server: Open Preview`。
+4. 插件会打开浏览器预览页面。
+5. 用完后运行 `Mermaid Markdown Server: Stop Preview` 停止服务。
+
+默认地址是：
 
 ```text
 http://localhost:3000
 ```
 
-For someone else on the same LAN, use the copied LAN URL, usually:
+如果要给同一局域网的人访问，运行 `Mermaid Markdown Server: Copy LAN URL`，通常会得到类似：
 
 ```text
-http://<your-computer-ip>:3000
+http://<你的电脑IP>:3000
 ```
 
-## Settings
+## 配置
 
 ```json
 {
@@ -41,82 +43,83 @@ http://<your-computer-ip>:3000
 }
 ```
 
-Use `0.0.0.0` if other devices on the same network need to open the preview.
-Set `autoStopAfterMinutes` to `0` to keep the server running until you stop it manually.
+如果需要局域网访问，保持 `host` 为 `0.0.0.0`。
+如果不想自动停止服务，把 `autoStopAfterMinutes` 设置为 `0`。
 
-## Mermaid Example
+## Mermaid 示例
 
 ````markdown
-# System Flow
+# 系统流程
 
 ```mermaid
 graph TD
-  A[Markdown file] --> B[VS Code extension]
-  B --> C[Local web server]
-  C --> D[Browser preview]
+  A[Markdown 文件] --> B[VS Code 插件]
+  B --> C[本地 Web 服务]
+  C --> D[浏览器预览]
 ```
 ````
 
-## Relative Links
+## 相对路径
 
-The preview root is the directory that contains the Markdown file you opened.
-For example, if you start the preview from:
+预览根目录是你打开的 Markdown 文件所在目录。
+例如从下面这个文件启动预览：
 
 ```text
 docs/index.md
 ```
 
-These links are resolved under `docs/`:
+下面这些相对路径都会在 `docs/` 目录下解析：
 
 ```text
 Markdown link: Chapter 1 -> ./chapter-1.md
 Image path:    Diagram   -> ./images/diagram.png
 ```
 
-Markdown links open inside the same preview page. Images and other relative files are served through the local preview server.
-Paths outside the preview root, such as `../secret.md`, are blocked.
+Markdown 链接会在同一个预览页面内打开。图片和其他相对资源会通过本地预览服务读取。
+为了避免读取到不该访问的文件，类似 `../secret.md` 这种逃出预览根目录的路径会被阻止。
 
-## Development
+## 开发
 
-Install dependencies:
+安装依赖：
 
 ```bash
 npm install
 ```
 
-Run tests:
+运行测试：
 
 ```bash
 npm test
 ```
 
-Build a VSIX package:
+打包 VSIX：
 
 ```bash
 npm run package
 ```
 
-Run the standalone server:
+运行独立服务：
 
 ```bash
 node src/cli.js examples/demo.md --port 3000
 ```
 
-Debug the VS Code extension:
+调试 VS Code 插件：
 
-1. Open this folder in VS Code.
-2. Press `F5` to launch an Extension Development Host.
-3. Open a Markdown file in the development host.
-4. Run `Mermaid Markdown Server: Open Preview`.
+1. 用 VS Code 打开本仓库。
+2. 按 `F5` 启动 Extension Development Host。
+3. 在新窗口中打开一个 Markdown 文件。
+4. 运行 `Mermaid Markdown Server: Open Preview`。
 
-## Release Automation
+## 发布自动化
 
-The CI workflow runs tests and uploads a packaged VSIX artifact for pushes and pull requests.
-The release workflow runs when you push a tag like `v0.1.0` or start it manually from GitHub Actions.
-It creates a GitHub Release with the VSIX attached.
+CI workflow 会在 push 和 pull request 时运行测试，并上传打包后的 VSIX artifact。
+Release workflow 会在推送类似 `v1.0.0` 的 tag，或从 GitHub Actions 手动触发时运行。
+它会创建 GitHub Release，并把 VSIX 附加到 release。
 
-To also publish to the VS Code Marketplace, add a repository secret named `VSCE_PAT`.
+如果还要发布到 VS Code Marketplace，在 GitHub 仓库里添加名为 `VSCE_PAT` 的 secret。
 
-## Current Limitation
+## 当前限制
 
-The browser preview loads `marked` and `mermaid` from jsDelivr. The preview browser needs internet access for those libraries. A later version can vendor those scripts for fully offline use.
+浏览器预览会从 jsDelivr 加载 `marked` 和 `mermaid`。因此预览浏览器需要能访问网络。
+后续版本可以把这些脚本内置到插件里，支持完全离线使用。

@@ -20,3 +20,11 @@ test('release workflow uploads VSIX and supports Marketplace publishing', () => 
   assert.match(workflow, /VSCE_PAT/);
   assert.match(workflow, /npm run publish/);
 });
+
+test('README defaults to Chinese and links to the English version', () => {
+  const readme = fs.readFileSync('README.md', 'utf8');
+
+  assert.match(readme, /中文/);
+  assert.match(readme, /README\.en\.md/);
+  assert.equal(fs.existsSync('README.en.md'), true);
+});
