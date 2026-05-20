@@ -126,6 +126,108 @@ test('openPreview schedules idle auto-stop with configured minutes', async () =>
   assert.equal(delays.at(-1), 2 * 60 * 1000);
 });
 
+test('openPreview switches markdown files without rebinding the server on the same port', async () => {
+  let listenCount = 0;
+  let closeCount = 0;
+  const updatedFiles = [];
+  const opened = [];
+  const controller = createExtensionController(fakeRuntimeVscode(opened), {
+    createMarkdownServer: () => ({
+      once() {},
+      off() {},
+      listen(_port, _host, callback) {
+        listenCount += 1;
+        callback();
+      },
+      close(callback) {
+        closeCount += 1;
+        callback();
+      },
+      setFile(file) {
+        updatedFiles.push(file);
+      }
+    })
+  });
+
+  await controller.openPreview({ fsPath: 'E:/notes/first.md' });
+  await controller.openPreview({ fsPath: 'E:/notes/second.md' });
+
+  assert.equal(listenCount, 1);
+  assert.equal(closeCount, 0);
+  assert.deepEqual(updatedFiles, ['E:/notes/second.md']);
+  assert.deepEqual(opened, ['http://localhost:3000', 'http://localhost:3000']);
+});
+
+test('openPreview serializes rapid file switches so the first port bind is reused', async () => {
+  let serverCount = 0;
+  let listenCount = 0;
+  const listenCallbacks = [];
+  const updatedFiles = [];
+  const opened = [];
+  const controller = createExtensionController(fakeRuntimeVscode(opened), {
+    createMarkdownServer: () => {
+      serverCount += 1;
+      return {
+        once() {},
+        off() {},
+        listen(_port, _host, callback) {
+          listenCount += 1;
+          listenCallbacks.push(callback);
+        },
+        close(callback) {
+          callback();
+        },
+        setFile(file) {
+          updatedFiles.push(file);
+        }
+      };
+    }
+  });
+
+  const firstOpen = controller.openPreview({ fsPath: 'E:/notes/first.md' });
+  await flushPromises();
+  const secondOpen = controller.openPreview({ fsPath: 'E:/notes/second.md' });
+  await flushPromises();
+
+  for (const callback of [...listenCallbacks]) {
+    callback();
+  }
+  await Promise.all([firstOpen, secondOpen]);
+
+  assert.equal(serverCount, 1);
+  assert.equal(listenCount, 1);
+  assert.deepEqual(updatedFiles, ['E:/notes/second.md']);
+  assert.deepEqual(opened, ['http://localhost:3000', 'http://localhost:3000']);
+});
+
+test('stop force-closes active HTTP connections so the port can be released', async () => {
+  let closeCallback;
+  let forceClosedConnections = false;
+  const controller = createExtensionController(fakeRuntimeVscode([]), {
+    createMarkdownServer: () => ({
+      once() {},
+      off() {},
+      listen(_port, _host, callback) {
+        callback();
+      },
+      close(callback) {
+        closeCallback = callback;
+      },
+      closeAllConnections() {
+        forceClosedConnections = true;
+        closeCallback();
+      }
+    })
+  });
+
+  await controller.openPreview({ fsPath: 'E:/notes/plan.md' });
+  const stopPromise = controller.stop(true);
+  await Promise.resolve();
+
+  assert.equal(forceClosedConnections, true);
+  await stopPromise;
+});
+
 function fakeRuntimeVscode(opened, configuration = {}, errors = []) {
   return {
     StatusBarAlignment: { Right: 1 },
@@ -167,4 +269,10 @@ function fakeRuntimeVscode(opened, configuration = {}, errors = []) {
       })
     }
   };
+}
+
+async function flushPromises() {
+  for (let index = 0; index < 5; index += 1) {
+    await Promise.resolve();
+  }
 }

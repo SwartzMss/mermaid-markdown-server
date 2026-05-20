@@ -18,11 +18,19 @@ const VENDOR_ASSETS = {
 };
 
 function createMarkdownServer({ file }) {
-  const markdownPath = path.resolve(process.cwd(), file);
-  const previewRoot = getPreviewRoot(markdownPath);
-  const title = path.basename(markdownPath);
+  let markdownPath;
+  let previewRoot;
+  let title;
 
-  return http.createServer(async (request, response) => {
+  function setFile(nextFile) {
+    markdownPath = path.resolve(process.cwd(), nextFile);
+    previewRoot = getPreviewRoot(markdownPath);
+    title = path.basename(markdownPath);
+  }
+
+  setFile(file);
+
+  const server = http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, 'http://localhost');
 
@@ -95,6 +103,10 @@ function createMarkdownServer({ file }) {
       send(response, error.code === 'ENOENT' ? 404 : 500, 'text/plain; charset=utf-8', message);
     }
   });
+
+  server.setFile = setFile;
+
+  return server;
 }
 
 function send(response, statusCode, contentType, body, headers = {}) {

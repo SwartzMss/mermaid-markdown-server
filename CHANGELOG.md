@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6
+
+- Reused the existing preview server when switching Markdown files on the same port.
+- Serialized preview start, switch, and stop operations to avoid rapid-switch port binding races.
+- Force-closed active HTTP connections when stopping the preview server so the port is released.
+- Added regression tests for server reuse, rapid file switching, and stop-time connection cleanup.
+
 ## 1.0.5
 
 - Removed the standalone CLI entry and its related configuration files.

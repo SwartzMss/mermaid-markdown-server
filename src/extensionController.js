@@ -62,9 +62,11 @@ function createExtensionController(vscode, dependencies = {}) {
   const clearTimer = dependencies.clearTimeout || clearTimeout;
   let server = null;
   let currentUrl = null;
+  let currentPort = null;
   let currentAutoStopMs = 0;
   let autoStopTimer = null;
   let statusBarItem = null;
+  let operationQueue = Promise.resolve();
 
   function activate(context) {
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -79,7 +81,11 @@ function createExtensionController(vscode, dependencies = {}) {
     );
   }
 
-  async function start(resourceUri, optionsOverride = {}) {
+  function start(resourceUri, optionsOverride = {}) {
+    return enqueueOperation(() => startNow(resourceUri, optionsOverride));
+  }
+
+  async function startNow(resourceUri, optionsOverride = {}) {
     let file;
     let options;
 
@@ -91,11 +97,8 @@ function createExtensionController(vscode, dependencies = {}) {
       return;
     }
 
-    await stop(false);
-
-    try {
-      server = serverFactory({ file });
-      await listen(server, options.port, PREVIEW_HOST);
+    if (server && currentPort === options.port && typeof server.setFile === 'function') {
+      server.setFile(file);
       currentUrl = buildPreviewUrl(options.port);
       currentAutoStopMs = resolveAutoStopMs(options.autoStopAfterMinutes);
       resetAutoStopTimer();
@@ -106,12 +109,34 @@ function createExtensionController(vscode, dependencies = {}) {
       }
 
       if (options.autoOpen || optionsOverride.openAfterStart) {
-        await openCurrentUrl();
+        await openCurrentUrlNow();
+      }
+      return;
+    }
+
+    await stopNow(false);
+
+    try {
+      server = serverFactory({ file });
+      await listen(server, options.port, PREVIEW_HOST);
+      currentUrl = buildPreviewUrl(options.port);
+      currentPort = options.port;
+      currentAutoStopMs = resolveAutoStopMs(options.autoStopAfterMinutes);
+      resetAutoStopTimer();
+      showRunningStatus(currentUrl);
+
+      if (!optionsOverride.silent) {
+        await vscode.window.showInformationMessage(`Mermaid Markdown Server started at ${currentUrl}`);
+      }
+
+      if (options.autoOpen || optionsOverride.openAfterStart) {
+        await openCurrentUrlNow();
       }
     } catch (error) {
       const serverToClose = server;
       server = null;
       currentUrl = null;
+      currentPort = null;
       currentAutoStopMs = 0;
       clearAutoStopTimer();
       hideRunningStatus();
@@ -120,7 +145,11 @@ function createExtensionController(vscode, dependencies = {}) {
     }
   }
 
-  async function stop(showMessage) {
+  function stop(showMessage) {
+    return enqueueOperation(() => stopNow(showMessage));
+  }
+
+  async function stopNow(showMessage) {
     if (!server) {
       if (showMessage) {
         vscode.window.showInformationMessage('Mermaid Markdown Server is not running.');
@@ -131,35 +160,32 @@ function createExtensionController(vscode, dependencies = {}) {
     const serverToClose = server;
     server = null;
     currentUrl = null;
+    currentPort = null;
     currentAutoStopMs = 0;
     clearAutoStopTimer();
     hideRunningStatus();
 
-    await new Promise((resolve, reject) => {
-      serverToClose.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      });
-    });
+    await closeServer(serverToClose);
 
     if (showMessage) {
       vscode.window.showInformationMessage('Mermaid Markdown Server stopped.');
     }
   }
 
-  async function openPreview(resourceUri) {
+  function openPreview(resourceUri) {
+    return enqueueOperation(() => openPreviewNow(resourceUri));
+  }
+
+  async function openPreviewNow(resourceUri) {
     if (!currentUrl || resourceUri) {
-      await start(resourceUri, { openAfterStart: true, silent: true });
+      await startNow(resourceUri, { openAfterStart: true, silent: true });
       return;
     }
 
-    await openCurrentUrl();
+    await openCurrentUrlNow();
   }
 
-  async function openCurrentUrl() {
+  async function openCurrentUrlNow() {
     if (!currentUrl) {
       vscode.window.showErrorMessage('Start the Mermaid Markdown Server before opening the preview.');
       return;
@@ -167,6 +193,12 @@ function createExtensionController(vscode, dependencies = {}) {
 
     resetAutoStopTimer();
     await vscode.env.openExternal(vscode.Uri.parse(currentUrl));
+  }
+
+  function enqueueOperation(operation) {
+    const nextOperation = operationQueue.then(operation, operation);
+    operationQueue = nextOperation.catch(() => {});
+    return nextOperation;
   }
 
   function readConfiguration() {
@@ -243,10 +275,19 @@ function closeServer(server) {
     return Promise.resolve();
   }
 
-  return new Promise((resolve) => {
-    server.close(() => {
+  return new Promise((resolve, reject) => {
+    server.close((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
       resolve();
     });
+
+    if (typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
   });
 }
 

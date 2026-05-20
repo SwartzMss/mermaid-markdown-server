@@ -2,7 +2,7 @@
   "name": "mermaid-markdown-server",
   "displayName": "Mermaid Markdown Server",
   "description": "Preview Markdown files with Mermaid diagrams through a local web server from VS Code.",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "swartzmss",
   "license": "MIT",
   "icon": "images/icon.png",
