@@ -4,6 +4,19 @@ const path = require('node:path');
 const { buildHtml } = require('./page');
 const { CLIENT_JS, STYLES_CSS } = require('./assets');
 
+const VENDOR_ASSETS = {
+  '/vendor/marked.min.js': {
+    packageName: 'marked',
+    relativePath: ['lib', 'marked.umd.js'],
+    contentType: 'application/javascript; charset=utf-8'
+  },
+  '/vendor/mermaid.min.js': {
+    packageName: 'mermaid',
+    relativePath: ['dist', 'mermaid.min.js'],
+    contentType: 'application/javascript; charset=utf-8'
+  }
+};
+
 function createMarkdownServer({ file }) {
   const markdownPath = path.resolve(process.cwd(), file);
   const previewRoot = getPreviewRoot(markdownPath);
@@ -59,6 +72,13 @@ function createMarkdownServer({ file }) {
 
       if (url.pathname === '/assets/styles.css') {
         send(response, 200, 'text/css; charset=utf-8', STYLES_CSS);
+        return;
+      }
+
+      const vendorAsset = vendorAssetForPath(url.pathname);
+      if (vendorAsset) {
+        const data = await fs.readFile(vendorAsset.filePath);
+        send(response, 200, vendorAsset.contentType, data, { 'Cache-Control': 'public, max-age=31536000, immutable' });
         return;
       }
 
@@ -122,9 +142,22 @@ function contentTypeForPath(filePath) {
   return types[extension] || 'application/octet-stream';
 }
 
+function vendorAssetForPath(pathname) {
+  const asset = VENDOR_ASSETS[pathname];
+  if (!asset) {
+    return undefined;
+  }
+
+  return {
+    ...asset,
+    filePath: path.resolve(__dirname, '..', 'node_modules', asset.packageName, ...asset.relativePath)
+  };
+}
+
 module.exports = {
   createMarkdownServer,
   getPreviewRoot,
   resolveRootRelativePath,
-  contentTypeForPath
+  contentTypeForPath,
+  vendorAssetForPath
 };

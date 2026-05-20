@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- Bundled Markdown and Mermaid browser libraries for offline preview.
+- Served renderer libraries from the local preview server instead of external CDNs.
+- Added tests for local vendor script URLs and installed vendor asset paths.
+
 ## 1.0.2
 
 - Fixed a generated client script syntax error in external URL detection.

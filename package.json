@@ -2,7 +2,7 @@
   "name": "mermaid-markdown-server",
   "displayName": "Mermaid Markdown Server",
   "description": "Preview Markdown files with Mermaid diagrams through a local web server from VS Code.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "swartzmss",
   "license": "MIT",
   "repository": {
@@ -107,6 +107,10 @@
     "server",
     "vscode"
   ],
+  "dependencies": {
+    "marked": "12.0.2",
+    "mermaid": "10.9.1"
+  },
   "devDependencies": {
     "@vscode/vsce": "^3.2.2"
   }

@@ -4,12 +4,10 @@ const CLIENT_JS = `
   const status = document.getElementById('status');
   const scriptTimeoutMs = 8000;
   const markedSources = [
-    'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js',
-    'https://unpkg.com/marked@12.0.2/marked.min.js'
+    '/vendor/marked.min.js'
   ];
   const mermaidSources = [
-    'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js',
-    'https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js'
+    '/vendor/mermaid.min.js'
   ];
   let markedLoadPromise;
   let mermaidLoadPromise;
@@ -49,11 +47,11 @@ const CLIENT_JS = `
         await loadScript(source);
         return;
       } catch (_error) {
-        // Try the next configured CDN source.
+        // Try the next configured source.
       }
     }
 
-    throw new Error(name + ' library failed to load. Check your network connection.');
+    throw new Error(name + ' library failed to load from the local preview server.');
   }
 
   async function ensureMarked() {
