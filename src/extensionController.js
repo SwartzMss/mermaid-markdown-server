@@ -1,6 +1,6 @@
 const { createMarkdownServer } = require('./server');
 
-const PREVIEW_HOST = '127.0.0.1';
+const PREVIEW_HOST = '0.0.0.0';
 
 function getMarkdownPath(vscode, resourceUri) {
   if (resourceUri && isMarkdownPath(resourceUri.fsPath)) {

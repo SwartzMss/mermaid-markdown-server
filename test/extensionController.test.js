@@ -84,7 +84,7 @@ test('openPreview starts the server before opening the browser when no server is
       once() {},
       off() {},
       listen(port, host, callback) {
-        listened = port === 3000 && host === '127.0.0.1';
+        listened = port === 3000 && host === '0.0.0.0';
         callback();
       },
       close(callback) {

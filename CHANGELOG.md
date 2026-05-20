@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7
+
+- Changed the preview server to listen on all network interfaces by default for LAN sharing.
+- Kept the local browser launch URL as `http://localhost:<port>`.
+- Updated the startup test to verify the `0.0.0.0` bind host.
+
 ## 1.0.6
 
 - Reused the existing preview server when switching Markdown files on the same port.
