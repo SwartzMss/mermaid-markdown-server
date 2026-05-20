@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+- Fixed a generated client script syntax error in external URL detection.
+- Added a test that parses the generated browser script before release.
+
 ## 1.0.1
 
 - Fixed preview startup when LAN address detection is unavailable.

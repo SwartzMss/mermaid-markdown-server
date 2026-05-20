@@ -85,7 +85,7 @@ const CLIENT_JS = `
   }
 
   function isExternalUrl(value) {
-    return /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value || '');
+    return /^(?:[a-z][a-z0-9+.-]*:|\\/\\/|#)/i.test(value || '');
   }
 
   function rootRelativePath(value) {
