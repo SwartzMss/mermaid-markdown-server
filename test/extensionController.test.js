@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const os = require('node:os');
 const {
   getMarkdownPath,
   displayHost,
@@ -131,7 +132,42 @@ test('openPreview schedules idle auto-stop with configured minutes', async () =>
   assert.equal(delays.at(-1), 2 * 60 * 1000);
 });
 
-function fakeRuntimeVscode(opened, configuration = {}) {
+test('openPreview still starts when LAN host detection fails', async () => {
+  const originalNetworkInterfaces = os.networkInterfaces;
+  const opened = [];
+  const errors = [];
+  let listened = false;
+
+  os.networkInterfaces = () => {
+    throw new Error('network interfaces unavailable');
+  };
+
+  try {
+    const controller = createExtensionController(fakeRuntimeVscode(opened, {}, errors), {
+      createMarkdownServer: () => ({
+        once() {},
+        off() {},
+        listen(_port, _host, callback) {
+          listened = true;
+          callback();
+        },
+        close(callback) {
+          callback();
+        }
+      })
+    });
+
+    await controller.openPreview({ fsPath: 'E:/notes/plan.md' });
+  } finally {
+    os.networkInterfaces = originalNetworkInterfaces;
+  }
+
+  assert.equal(listened, true);
+  assert.deepEqual(opened, ['http://localhost:3000']);
+  assert.deepEqual(errors, []);
+});
+
+function fakeRuntimeVscode(opened, configuration = {}, errors = []) {
   return {
     StatusBarAlignment: { Right: 1 },
     Uri: {
@@ -158,7 +194,9 @@ function fakeRuntimeVscode(opened, configuration = {}) {
         show() {},
         hide() {}
       }),
-      showErrorMessage: () => {},
+      showErrorMessage: (message) => {
+        errors.push(message);
+      },
       showInformationMessage: async () => undefined,
       showOpenDialog: async () => undefined
     },

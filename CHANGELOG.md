@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- Fixed preview startup when LAN address detection is unavailable.
+- Cleaned up preview server state if startup fails after binding a port.
+- Avoided blocking the preview page on remote Markdown and Mermaid library scripts.
+- Added fallback CDN loading and timeout handling for browser renderer libraries.
+
 ## 1.0.0
 
 - Initial VS Code extension scaffold.

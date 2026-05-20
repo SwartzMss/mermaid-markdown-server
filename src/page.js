@@ -8,8 +8,6 @@ function buildHtml({ title }) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${safeTitle}</title>
   <link rel="stylesheet" href="/assets/styles.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
   <script defer src="/assets/client.js"></script>
 </head>
 <body>

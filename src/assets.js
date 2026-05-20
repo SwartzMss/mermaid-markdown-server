@@ -2,10 +2,76 @@ const CLIENT_JS = `
 (function () {
   const root = document.getElementById('markdown-root');
   const status = document.getElementById('status');
+  const scriptTimeoutMs = 8000;
+  const markedSources = [
+    'https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js',
+    'https://unpkg.com/marked@12.0.2/marked.min.js'
+  ];
+  const mermaidSources = [
+    'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js',
+    'https://unpkg.com/mermaid@10.9.1/dist/mermaid.min.js'
+  ];
+  let markedLoadPromise;
+  let mermaidLoadPromise;
 
   function setStatus(message, kind) {
     status.textContent = message;
     status.dataset.kind = kind || 'info';
+  }
+
+  function loadScript(source) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const timer = window.setTimeout(() => {
+        script.remove();
+        reject(new Error('Timed out loading ' + source));
+      }, scriptTimeoutMs);
+
+      script.src = source;
+      script.async = true;
+      script.onload = () => {
+        window.clearTimeout(timer);
+        resolve();
+      };
+      script.onerror = () => {
+        window.clearTimeout(timer);
+        script.remove();
+        reject(new Error('Failed to load ' + source));
+      };
+
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadFirstAvailableScript(name, sources) {
+    for (const source of sources) {
+      try {
+        await loadScript(source);
+        return;
+      } catch (_error) {
+        // Try the next configured CDN source.
+      }
+    }
+
+    throw new Error(name + ' library failed to load. Check your network connection.');
+  }
+
+  async function ensureMarked() {
+    if (window.marked) {
+      return;
+    }
+
+    markedLoadPromise = markedLoadPromise || loadFirstAvailableScript('Markdown', markedSources);
+    await markedLoadPromise;
+  }
+
+  async function ensureMermaid() {
+    if (window.mermaid) {
+      return;
+    }
+
+    mermaidLoadPromise = mermaidLoadPromise || loadFirstAvailableScript('Mermaid', mermaidSources);
+    await mermaidLoadPromise;
   }
 
   function prepareMermaidBlocks() {
@@ -68,6 +134,8 @@ const CLIENT_JS = `
   }
 
   async function renderMarkdownPath(relativePath) {
+    await ensureMarked();
+
     const endpoint = relativePath ? contentEndpoint(rootRelativePath(relativePath)) : '/content';
     const response = await fetch(endpoint, { cache: 'no-store' });
     if (!response.ok) {
@@ -87,8 +155,10 @@ const CLIENT_JS = `
       return;
     }
 
-    if (!window.mermaid) {
-      setStatus('Mermaid library failed to load. Check your network connection.', 'error');
+    try {
+      await ensureMermaid();
+    } catch (error) {
+      setStatus(error.message || 'Mermaid library failed to load. Check your network connection.', 'error');
       return;
     }
 
@@ -98,11 +168,7 @@ const CLIENT_JS = `
 
   async function render() {
     try {
-      if (!window.marked) {
-        setStatus('Markdown library failed to load. Check your network connection.', 'error');
-        return;
-      }
-
+      setStatus('Loading markdown renderer...');
       await renderMarkdownPath('');
       setStatus('');
       status.hidden = true;

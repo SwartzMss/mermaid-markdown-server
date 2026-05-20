@@ -10,6 +10,13 @@ test('buildHtml includes the viewer shell and configured title', () => {
   assert.match(html, /\/assets\/client.js/);
 });
 
+test('buildHtml does not block startup on remote markdown libraries', () => {
+  const html = buildHtml({ title: 'Architecture Notes' });
+
+  assert.doesNotMatch(html, /marked\.min\.js/);
+  assert.doesNotMatch(html, /mermaid\.min\.js/);
+});
+
 test('buildHtml escapes title text', () => {
   const html = buildHtml({ title: '<script>alert(1)</script>' });
 

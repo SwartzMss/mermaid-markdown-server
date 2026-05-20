@@ -51,7 +51,13 @@ function buildPreviewUrl(host, port) {
 }
 
 function findLanHost() {
-  const networks = os.networkInterfaces();
+  let networks;
+
+  try {
+    networks = os.networkInterfaces();
+  } catch (_error) {
+    return 'localhost';
+  }
 
   for (const interfaces of Object.values(networks)) {
     for (const details of interfaces || []) {
@@ -141,10 +147,14 @@ function createExtensionController(vscode, dependencies = {}) {
         await copyLanUrl();
       }
     } catch (error) {
+      const serverToClose = server;
       server = null;
       currentUrl = null;
       currentLanUrl = null;
+      currentAutoStopMs = 0;
+      clearAutoStopTimer();
       hideRunningStatus();
+      await closeServer(serverToClose);
       vscode.window.showErrorMessage(`Failed to start Mermaid Markdown Server: ${error.message}`);
     }
   }
@@ -276,6 +286,18 @@ function listen(server, port, host) {
     server.once('error', reject);
     server.listen(port, host, () => {
       server.off('error', reject);
+      resolve();
+    });
+  });
+}
+
+function closeServer(server) {
+  if (!server) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    server.close(() => {
       resolve();
     });
   });
