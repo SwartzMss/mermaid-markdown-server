@@ -2,19 +2,16 @@
   "name": "mermaid-markdown-server",
   "displayName": "Mermaid Markdown Server",
   "description": "Preview Markdown files with Mermaid diagrams through a local web server from VS Code.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "swartzmss",
   "license": "MIT",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/SwartzMss/mermaid-markdown-server.git"
   },
   "main": "./src/extension.js",
-  "bin": {
-    "mermaid-markdown-server": "src/cli.js"
-  },
   "scripts": {
-    "start": "node src/cli.js",
     "test": "node --test",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -38,10 +35,6 @@
       {
         "command": "mermaidMarkdownServer.stop",
         "title": "Mermaid Markdown Server: Stop Preview"
-      },
-      {
-        "command": "mermaidMarkdownServer.copyLanUrl",
-        "title": "Mermaid Markdown Server: Copy LAN URL"
       }
     ],
     "menus": {
@@ -65,9 +58,6 @@
         },
         {
           "command": "mermaidMarkdownServer.stop"
-        },
-        {
-          "command": "mermaidMarkdownServer.copyLanUrl"
         }
       ]
     },
@@ -80,11 +70,6 @@
           "minimum": 1,
           "maximum": 65535,
           "description": "Port used by the Markdown preview web server."
-        },
-        "mermaidMarkdownServer.host": {
-          "type": "string",
-          "default": "0.0.0.0",
-          "description": "Host used by the Markdown preview web server. Use 0.0.0.0 for LAN access."
         },
         "mermaidMarkdownServer.autoOpen": {
           "type": "boolean",

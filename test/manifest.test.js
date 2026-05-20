@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const manifest = require('../package.json');
+const fs = require('node:fs');
 
 test('package manifest is configured as a VS Code extension', () => {
   assert.equal(manifest.main, './src/extension.js');
@@ -13,8 +14,14 @@ test('package manifest contributes one primary preview command and stop command'
 
   assert.ok(commands.includes('mermaidMarkdownServer.openPreview'));
   assert.ok(commands.includes('mermaidMarkdownServer.stop'));
+  assert.ok(!commands.includes('mermaidMarkdownServer.copyLanUrl'));
   assert.ok(!commands.includes('mermaidMarkdownServer.start'));
   assert.ok(!commands.includes('mermaidMarkdownServer.open'));
+});
+
+test('package manifest does not expose a standalone CLI entry', () => {
+  assert.equal(manifest.bin, undefined);
+  assert.equal(manifest.scripts.start, undefined);
 });
 
 test('package manifest contributes primary preview command to explorer markdown context menu', () => {
@@ -36,4 +43,13 @@ test('package manifest exposes auto-stop setting', () => {
 
   assert.equal(setting.type, 'number');
   assert.equal(setting.default, 30);
+});
+
+test('package manifest does not expose LAN host configuration', () => {
+  assert.equal(manifest.contributes.configuration.properties['mermaidMarkdownServer.host'], undefined);
+});
+
+test('package manifest includes a packaged PNG icon', () => {
+  assert.equal(manifest.icon, 'images/icon.png');
+  assert.equal(fs.existsSync(manifest.icon), true);
 });

@@ -1,5 +1,6 @@
-const os = require('node:os');
 const { createMarkdownServer } = require('./server');
+
+const PREVIEW_HOST = '127.0.0.1';
 
 function getMarkdownPath(vscode, resourceUri) {
   if (resourceUri && isMarkdownPath(resourceUri.fsPath)) {
@@ -42,37 +43,8 @@ function isMarkdownPath(filePath) {
   return typeof filePath === 'string' && /\.(md|markdown)$/i.test(filePath);
 }
 
-function displayHost(host) {
-  return host === '0.0.0.0' || host === '::' ? 'localhost' : host;
-}
-
-function buildPreviewUrl(host, port) {
-  return `http://${displayHost(host)}:${port}`;
-}
-
-function findLanHost() {
-  let networks;
-
-  try {
-    networks = os.networkInterfaces();
-  } catch (_error) {
-    return 'localhost';
-  }
-
-  for (const interfaces of Object.values(networks)) {
-    for (const details of interfaces || []) {
-      if (details.family === 'IPv4' && !details.internal) {
-        return details.address;
-      }
-    }
-  }
-
-  return 'localhost';
-}
-
-function buildLanUrl(host, port) {
-  const lanHost = host === '0.0.0.0' || host === '::' ? findLanHost() : displayHost(host);
-  return `http://${lanHost}:${port}`;
+function buildPreviewUrl(port) {
+  return `http://localhost:${port}`;
 }
 
 function resolveAutoStopMs(minutes) {
@@ -90,7 +62,6 @@ function createExtensionController(vscode, dependencies = {}) {
   const clearTimer = dependencies.clearTimeout || clearTimeout;
   let server = null;
   let currentUrl = null;
-  let currentLanUrl = null;
   let currentAutoStopMs = 0;
   let autoStopTimer = null;
   let statusBarItem = null;
@@ -104,8 +75,7 @@ function createExtensionController(vscode, dependencies = {}) {
     context.subscriptions.push(
       statusBarItem,
       vscode.commands.registerCommand('mermaidMarkdownServer.openPreview', openPreview),
-      vscode.commands.registerCommand('mermaidMarkdownServer.stop', () => stop(true)),
-      vscode.commands.registerCommand('mermaidMarkdownServer.copyLanUrl', copyLanUrl)
+      vscode.commands.registerCommand('mermaidMarkdownServer.stop', () => stop(true))
     );
   }
 
@@ -125,32 +95,23 @@ function createExtensionController(vscode, dependencies = {}) {
 
     try {
       server = serverFactory({ file });
-      await listen(server, options.port, options.host);
-      currentUrl = buildPreviewUrl(options.host, options.port);
-      currentLanUrl = buildLanUrl(options.host, options.port);
+      await listen(server, options.port, PREVIEW_HOST);
+      currentUrl = buildPreviewUrl(options.port);
       currentAutoStopMs = resolveAutoStopMs(options.autoStopAfterMinutes);
       resetAutoStopTimer();
       showRunningStatus(currentUrl);
 
-      const action = optionsOverride.silent
-        ? undefined
-        : await vscode.window.showInformationMessage(
-          `Mermaid Markdown Server started at ${currentUrl}`,
-          'Copy LAN URL'
-        );
+      if (!optionsOverride.silent) {
+        await vscode.window.showInformationMessage(`Mermaid Markdown Server started at ${currentUrl}`);
+      }
 
       if (options.autoOpen || optionsOverride.openAfterStart) {
         await openCurrentUrl();
-      }
-
-      if (action === 'Copy LAN URL') {
-        await copyLanUrl();
       }
     } catch (error) {
       const serverToClose = server;
       server = null;
       currentUrl = null;
-      currentLanUrl = null;
       currentAutoStopMs = 0;
       clearAutoStopTimer();
       hideRunningStatus();
@@ -170,7 +131,6 @@ function createExtensionController(vscode, dependencies = {}) {
     const serverToClose = server;
     server = null;
     currentUrl = null;
-    currentLanUrl = null;
     currentAutoStopMs = 0;
     clearAutoStopTimer();
     hideRunningStatus();
@@ -209,22 +169,10 @@ function createExtensionController(vscode, dependencies = {}) {
     await vscode.env.openExternal(vscode.Uri.parse(currentUrl));
   }
 
-  async function copyLanUrl() {
-    if (!currentLanUrl) {
-      vscode.window.showErrorMessage('Start the Mermaid Markdown Server before copying the LAN URL.');
-      return;
-    }
-
-    resetAutoStopTimer();
-    await vscode.env.clipboard.writeText(currentLanUrl);
-    vscode.window.showInformationMessage(`Copied LAN URL: ${currentLanUrl}`);
-  }
-
   function readConfiguration() {
     const config = vscode.workspace.getConfiguration('mermaidMarkdownServer');
     return {
       port: config.get('port', 3000),
-      host: config.get('host', '0.0.0.0'),
       autoOpen: config.get('autoOpen', true),
       autoStopAfterMinutes: config.get('autoStopAfterMinutes', 30)
     };
@@ -276,8 +224,7 @@ function createExtensionController(vscode, dependencies = {}) {
     activate,
     start,
     stop,
-    openPreview,
-    copyLanUrl
+    openPreview
   };
 }
 
@@ -307,9 +254,7 @@ module.exports = {
   getMarkdownPath,
   resolveMarkdownPath,
   isMarkdownPath,
-  displayHost,
   buildPreviewUrl,
-  buildLanUrl,
   resolveAutoStopMs,
   createExtensionController
 };

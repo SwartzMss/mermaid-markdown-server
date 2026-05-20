@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5
+
+- Removed the standalone CLI entry and its related configuration files.
+- Removed the LAN URL command and LAN host settings from the extension.
+- Added a packaged PNG icon and removed outdated README sections.
+
 ## 1.0.4
 
 - Added browser history support for Markdown-to-Markdown navigation.

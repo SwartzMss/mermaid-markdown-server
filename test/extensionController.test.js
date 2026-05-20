@@ -1,9 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const os = require('node:os');
 const {
   getMarkdownPath,
-  displayHost,
   buildPreviewUrl,
   resolveMarkdownPath,
   resolveAutoStopMs,
@@ -42,12 +40,8 @@ test('getMarkdownPath rejects non-markdown files', () => {
   );
 });
 
-test('displayHost converts 0.0.0.0 to localhost for local browser URLs', () => {
-  assert.equal(displayHost('0.0.0.0'), 'localhost');
-});
-
 test('buildPreviewUrl returns a browser friendly URL', () => {
-  assert.equal(buildPreviewUrl('0.0.0.0', 3000), 'http://localhost:3000');
+  assert.equal(buildPreviewUrl(3000), 'http://localhost:3000');
 });
 
 test('resolveAutoStopMs converts minutes to milliseconds', () => {
@@ -90,7 +84,7 @@ test('openPreview starts the server before opening the browser when no server is
       once() {},
       off() {},
       listen(port, host, callback) {
-        listened = port === 3000 && host === '0.0.0.0';
+        listened = port === 3000 && host === '127.0.0.1';
         callback();
       },
       close(callback) {
@@ -130,41 +124,6 @@ test('openPreview schedules idle auto-stop with configured minutes', async () =>
   await controller.openPreview({ fsPath: 'E:/notes/plan.md' });
 
   assert.equal(delays.at(-1), 2 * 60 * 1000);
-});
-
-test('openPreview still starts when LAN host detection fails', async () => {
-  const originalNetworkInterfaces = os.networkInterfaces;
-  const opened = [];
-  const errors = [];
-  let listened = false;
-
-  os.networkInterfaces = () => {
-    throw new Error('network interfaces unavailable');
-  };
-
-  try {
-    const controller = createExtensionController(fakeRuntimeVscode(opened, {}, errors), {
-      createMarkdownServer: () => ({
-        once() {},
-        off() {},
-        listen(_port, _host, callback) {
-          listened = true;
-          callback();
-        },
-        close(callback) {
-          callback();
-        }
-      })
-    });
-
-    await controller.openPreview({ fsPath: 'E:/notes/plan.md' });
-  } finally {
-    os.networkInterfaces = originalNetworkInterfaces;
-  }
-
-  assert.equal(listened, true);
-  assert.deepEqual(opened, ['http://localhost:3000']);
-  assert.deepEqual(errors, []);
 });
 
 function fakeRuntimeVscode(opened, configuration = {}, errors = []) {
