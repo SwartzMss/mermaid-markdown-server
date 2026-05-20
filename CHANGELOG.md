@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- Added browser history support for Markdown-to-Markdown navigation.
+- Restored Markdown previews from `?path=` URLs after refresh or direct open.
+- Resolved relative links and resources from the currently viewed Markdown file.
+- Kept Markdown links as preview URLs so new tabs open the rendered preview page.
+
 ## 1.0.3
 
 - Bundled Markdown and Mermaid browser libraries for offline preview.

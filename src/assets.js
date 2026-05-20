@@ -1,3 +1,72 @@
+function pathWithoutSearchAndHash(value) {
+  return String(value || '')
+    .split('#')[0]
+    .split('?')[0]
+    .replaceAll('\\', '/');
+}
+
+function normalizePathSegments(value) {
+  const segments = [];
+
+  for (const segment of pathWithoutSearchAndHash(value).replace(/^\/+/, '').split('/')) {
+    if (!segment || segment === '.') {
+      continue;
+    }
+
+    if (segment === '..') {
+      if (segments.length > 0 && segments.at(-1) !== '..') {
+        segments.pop();
+        continue;
+      }
+
+      segments.push(segment);
+      continue;
+    }
+
+    segments.push(segment);
+  }
+
+  return segments.join('/');
+}
+
+function pathDirectory(value) {
+  const normalizedPath = normalizePathSegments(value);
+  const slashIndex = normalizedPath.lastIndexOf('/');
+
+  return slashIndex === -1 ? '' : normalizedPath.slice(0, slashIndex);
+}
+
+function resolvePreviewPath(value, basePath) {
+  const rawPath = pathWithoutSearchAndHash(value);
+  if (rawPath.startsWith('/')) {
+    return normalizePathSegments(rawPath);
+  }
+
+  const baseDirectory = pathDirectory(basePath);
+  const pathFromBase = baseDirectory ? `${baseDirectory}/${rawPath}` : rawPath;
+
+  return normalizePathSegments(pathFromBase);
+}
+
+function searchForPreviewPath(path) {
+  const normalizedPath = normalizePathSegments(path);
+  return normalizedPath ? `?path=${encodeURIComponent(normalizedPath)}` : '';
+}
+
+function pathFromSearch(search) {
+  const params = new URLSearchParams(search || '');
+  return normalizePathSegments(params.get('path') || '');
+}
+
+const CLIENT_HELPERS_JS = [
+  pathWithoutSearchAndHash,
+  normalizePathSegments,
+  pathDirectory,
+  resolvePreviewPath,
+  searchForPreviewPath,
+  pathFromSearch
+].map((helper) => helper.toString()).join('\n\n');
+
 const CLIENT_JS = `
 (function () {
   const root = document.getElementById('markdown-root');
@@ -11,6 +80,9 @@ const CLIENT_JS = `
   ];
   let markedLoadPromise;
   let mermaidLoadPromise;
+  let currentPath = '';
+
+${CLIENT_HELPERS_JS}
 
   function setStatus(message, kind) {
     status.textContent = message;
@@ -86,15 +158,6 @@ const CLIENT_JS = `
     return /^(?:[a-z][a-z0-9+.-]*:|\\/\\/|#)/i.test(value || '');
   }
 
-  function rootRelativePath(value) {
-    return String(value || '')
-      .split('#')[0]
-      .split('?')[0]
-      .replaceAll('\\\\', '/')
-      .replace(/^\\.\\//, '')
-      .replace(/^\\/+/, '');
-  }
-
   function contentEndpoint(relativePath) {
     return '/content?path=' + encodeURIComponent(relativePath);
   }
@@ -104,17 +167,17 @@ const CLIENT_JS = `
   }
 
   function isMarkdownPath(value) {
-    return /\\.(md|markdown)$/i.test(rootRelativePath(value));
+    return /\\.(md|markdown)$/i.test(pathWithoutSearchAndHash(value));
   }
 
-  function rewriteRelativeUrls() {
+  function rewriteRelativeUrls(basePath) {
     root.querySelectorAll('img[src]').forEach((image) => {
       const source = image.getAttribute('src');
       if (!source || isExternalUrl(source)) {
         return;
       }
 
-      image.setAttribute('src', rawEndpoint(rootRelativePath(source)));
+      image.setAttribute('src', rawEndpoint(resolvePreviewPath(source, basePath)));
     });
 
     root.querySelectorAll('a[href]').forEach((link) => {
@@ -123,10 +186,10 @@ const CLIENT_JS = `
         return;
       }
 
-      const relativePath = rootRelativePath(href);
+      const relativePath = resolvePreviewPath(href, basePath);
       link.dataset.previewPath = relativePath;
       link.setAttribute('href', isMarkdownPath(href)
-        ? contentEndpoint(relativePath)
+        ? previewUrlForPath(relativePath)
         : rawEndpoint(relativePath));
     });
   }
@@ -134,15 +197,17 @@ const CLIENT_JS = `
   async function renderMarkdownPath(relativePath) {
     await ensureMarked();
 
-    const endpoint = relativePath ? contentEndpoint(rootRelativePath(relativePath)) : '/content';
+    const nextPath = normalizePathSegments(relativePath);
+    const endpoint = nextPath ? contentEndpoint(nextPath) : '/content';
     const response = await fetch(endpoint, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(await response.text());
     }
 
     const markdown = await response.text();
+    currentPath = nextPath;
     root.innerHTML = window.marked.parse(markdown, { breaks: false, gfm: true });
-    rewriteRelativeUrls();
+    rewriteRelativeUrls(currentPath);
     await renderMermaid();
   }
 
@@ -164,16 +229,29 @@ const CLIENT_JS = `
     await window.mermaid.run({ querySelector: '.mermaid' });
   }
 
-  async function render() {
+  function previewUrlForPath(path) {
+    return window.location.pathname + searchForPreviewPath(path);
+  }
+
+  async function showPath(path, loadingMessage) {
     try {
-      setStatus('Loading markdown renderer...');
-      await renderMarkdownPath('');
+      status.hidden = false;
+      setStatus(loadingMessage || 'Loading markdown...');
+      await renderMarkdownPath(path);
       setStatus('');
       status.hidden = true;
+      return true;
     } catch (error) {
       status.hidden = false;
       setStatus(error.message || 'Failed to render markdown.', 'error');
+      return false;
     }
+  }
+
+  async function render() {
+    const initialPath = pathFromSearch(window.location.search);
+    window.history.replaceState({ path: initialPath }, '', previewUrlForPath(initialPath));
+    await showPath(initialPath, 'Loading markdown renderer...');
   }
 
   root.addEventListener('click', async (event) => {
@@ -184,16 +262,19 @@ const CLIENT_JS = `
 
     event.preventDefault();
 
-    try {
-      status.hidden = false;
-      setStatus('Loading markdown...');
-      await renderMarkdownPath(link.dataset.previewPath);
-      setStatus('');
-      status.hidden = true;
-    } catch (error) {
-      status.hidden = false;
-      setStatus(error.message || 'Failed to render markdown.', 'error');
+    const nextPath = normalizePathSegments(link.dataset.previewPath);
+    const rendered = await showPath(nextPath, 'Loading markdown...');
+    if (rendered) {
+      window.history.pushState({ path: currentPath }, '', previewUrlForPath(currentPath));
     }
+  });
+
+  window.addEventListener('popstate', async (event) => {
+    const path = event.state && typeof event.state.path === 'string'
+      ? event.state.path
+      : pathFromSearch(window.location.search);
+
+    await showPath(path, 'Loading markdown...');
   });
 
   window.addEventListener('DOMContentLoaded', render);
@@ -313,4 +394,11 @@ body {
 }
 `;
 
-module.exports = { CLIENT_JS, STYLES_CSS };
+module.exports = {
+  CLIENT_JS,
+  STYLES_CSS,
+  pathDirectory,
+  pathFromSearch,
+  resolvePreviewPath,
+  searchForPreviewPath
+};
