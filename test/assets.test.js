@@ -46,9 +46,10 @@ test('stylesheet includes responsive document navigation layout', () => {
 });
 
 test('stylesheet balances navigation and reading proportions', () => {
-  assert.match(STYLES_CSS, /grid-template-columns: clamp\(220px, 22vw, 300px\) minmax\(0, 1fr\)/);
-  assert.match(STYLES_CSS, /width: min\(1320px, calc\(100% - clamp\(24px, 5vw, 72px\)\)\)/);
-  assert.match(STYLES_CSS, /max-width: 860px/);
+  assert.match(STYLES_CSS, /grid-template-columns: clamp\(210px, 16vw, 240px\) minmax\(0, 1fr\)/);
+  assert.match(STYLES_CSS, /width: calc\(100% - clamp\(24px, 3vw, 48px\)\)/);
+  assert.match(STYLES_CSS, /margin: clamp\(16px, 3vw, 32px\) 0 64px clamp\(12px, 2vw, 24px\)/);
+  assert.match(STYLES_CSS, /max-width: 1040px/);
   assert.match(STYLES_CSS, /padding: clamp\(24px, 4vw, 48px\)/);
   assert.match(STYLES_CSS, /border-left: 3px solid var\(--accent\)/);
   assert.match(STYLES_CSS, /@media \(max-width: 900px\)/);

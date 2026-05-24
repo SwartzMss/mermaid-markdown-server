@@ -402,10 +402,10 @@ body {
 
 .preview-layout {
   display: grid;
-  grid-template-columns: clamp(220px, 22vw, 300px) minmax(0, 1fr);
-  gap: clamp(18px, 2.4vw, 32px);
-  width: min(1320px, calc(100% - clamp(24px, 5vw, 72px)));
-  margin: clamp(20px, 4vw, 40px) auto 64px;
+  grid-template-columns: clamp(210px, 16vw, 240px) minmax(0, 1fr);
+  gap: clamp(20px, 2vw, 28px);
+  width: calc(100% - clamp(24px, 3vw, 48px));
+  margin: clamp(16px, 3vw, 32px) 0 64px clamp(12px, 2vw, 24px);
   align-items: start;
 }
 
@@ -478,12 +478,12 @@ body {
 }
 
 .markdown-body {
-  max-width: 860px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
 .status {
-  max-width: 860px;
+  max-width: 1040px;
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 16px;

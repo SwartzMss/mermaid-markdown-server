@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.10
+
+- Moved the document navigation closer to the left edge and reduced its width.
+- Expanded the Markdown preview area so content, diagrams, tables, and images have more room.
+
 ## 1.0.9
 
 - Refined the preview layout proportions for the document navigation panel and Markdown reading area.
