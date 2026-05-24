@@ -45,6 +45,16 @@ test('stylesheet includes responsive document navigation layout', () => {
   assert.match(STYLES_CSS, /\.document-nav__link\[aria-current="page"\]/);
 });
 
+test('stylesheet balances navigation and reading proportions', () => {
+  assert.match(STYLES_CSS, /grid-template-columns: clamp\(220px, 22vw, 300px\) minmax\(0, 1fr\)/);
+  assert.match(STYLES_CSS, /width: min\(1320px, calc\(100% - clamp\(24px, 5vw, 72px\)\)\)/);
+  assert.match(STYLES_CSS, /max-width: 860px/);
+  assert.match(STYLES_CSS, /padding: clamp\(24px, 4vw, 48px\)/);
+  assert.match(STYLES_CSS, /border-left: 3px solid var\(--accent\)/);
+  assert.match(STYLES_CSS, /@media \(max-width: 900px\)/);
+  assert.match(STYLES_CSS, /max-height: 32vh/);
+});
+
 test('resolvePreviewPath resolves links relative to the current markdown path', () => {
   assert.equal(resolvePreviewPath('./next.md', 'docs/guide/index.md'), 'docs/guide/next.md');
   assert.equal(resolvePreviewPath('../intro.md', 'docs/guide/index.md'), 'docs/intro.md');

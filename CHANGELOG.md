@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9
+
+- Refined the preview layout proportions for the document navigation panel and Markdown reading area.
+- Added responsive width, spacing, and padding rules for desktop, tablet, and mobile preview sizes.
+- Switched the active navigation item to a lighter highlight with an accent border.
+
 ## 1.0.8
 
 - Added a linked document navigation panel to the browser preview.

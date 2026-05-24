@@ -402,29 +402,31 @@ body {
 
 .preview-layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 20px;
-  width: min(1240px, calc(100% - 32px));
-  margin: 32px auto 64px;
+  grid-template-columns: clamp(220px, 22vw, 300px) minmax(0, 1fr);
+  gap: clamp(18px, 2.4vw, 32px);
+  width: min(1320px, calc(100% - clamp(24px, 5vw, 72px)));
+  margin: clamp(20px, 4vw, 40px) auto 64px;
   align-items: start;
 }
 
 .document-nav {
   position: sticky;
-  top: 24px;
-  max-height: calc(100vh - 48px);
+  top: clamp(16px, 3vw, 28px);
+  max-height: calc(100vh - clamp(32px, 6vw, 56px));
   overflow: auto;
-  padding: 18px;
+  padding: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
 .document-nav__title {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  padding: 0 4px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0;
 }
 
 .document-nav__items,
@@ -435,20 +437,21 @@ body {
 }
 
 .document-nav__children {
-  margin-left: 12px;
-  padding-left: 10px;
+  margin-left: 8px;
+  padding-left: 8px;
   border-left: 1px solid var(--border);
 }
 
 .document-nav__item {
-  margin: 2px 0;
+  margin: 1px 0;
 }
 
 .document-nav__link {
   display: block;
   overflow: hidden;
-  padding: 6px 8px;
+  padding: 6px 8px 6px 9px;
   color: var(--text);
+  border-left: 3px solid transparent;
   border-radius: 6px;
   text-decoration: none;
   text-overflow: ellipsis;
@@ -461,19 +464,28 @@ body {
 
 .document-nav__link[aria-current="page"] {
   color: var(--accent);
-  background: #e8f0ff;
+  background: #f1f6ff;
+  border-left: 3px solid var(--accent);
   font-weight: 700;
 }
 
 .page-shell {
   min-width: 0;
-  padding: 40px;
+  padding: clamp(24px, 4vw, 48px);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
+.markdown-body {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
 .status {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 16px;
   color: var(--muted);
 }
@@ -540,6 +552,20 @@ body {
   text-align: center;
 }
 
+@media (max-width: 900px) {
+  .preview-layout {
+    display: block;
+    width: min(900px, calc(100% - 24px));
+    margin-top: 16px;
+  }
+
+  .document-nav {
+    position: static;
+    max-height: 32vh;
+    margin-bottom: 12px;
+  }
+}
+
 @media (max-width: 640px) {
   .preview-layout {
     display: block;
@@ -549,7 +575,7 @@ body {
 
   .document-nav {
     position: static;
-    max-height: 42vh;
+    max-height: 32vh;
     border-top: 0;
     border-left: 0;
     border-right: 0;
