@@ -478,12 +478,14 @@ body {
 }
 
 .markdown-body {
-  max-width: 1040px;
+  max-width: 1120px;
   margin: 0 auto;
+  font-size: 17px;
+  line-height: 1.72;
 }
 
 .status {
-  max-width: 1040px;
+  max-width: 1120px;
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 16px;
@@ -513,7 +515,7 @@ body {
 
 .markdown-body pre {
   overflow: auto;
-  padding: 16px;
+  padding: 18px;
   background: var(--code-bg);
   border-radius: 6px;
 }
@@ -542,14 +544,20 @@ body {
 
 .markdown-body th,
 .markdown-body td {
-  padding: 8px 10px;
+  padding: 9px 12px;
   border: 1px solid var(--border);
 }
 
 .mermaid {
-  margin: 24px 0;
+  margin: 28px 0;
   overflow: auto;
   text-align: center;
+}
+
+.mermaid svg {
+  min-width: min(100%, 920px);
+  max-width: 100%;
+  height: auto;
 }
 
 @media (max-width: 900px) {

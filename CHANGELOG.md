@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.11
+
+- Increased the Markdown reading scale with larger body text, line height, code blocks, and table spacing.
+- Enlarged Mermaid diagrams within the expanded preview area so diagrams use the available width better.
+
 ## 1.0.10
 
 - Moved the document navigation closer to the left edge and reduced its width.
