@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.8
+
+- Added a linked document navigation panel to the browser preview.
+- Built the navigation tree from Markdown links referenced by the current entry file.
+- Skipped images, out-of-root links, and circular Markdown references in the navigation tree.
+- Documented the new navigation behavior in Chinese and English README files.
+
 ## 1.0.7
 
 - Changed the preview server to listen on all network interfaces by default for LAN sharing.

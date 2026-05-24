@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const {
   CLIENT_JS,
+  STYLES_CSS,
   pathDirectory,
   pathFromSearch,
   resolvePreviewPath,
@@ -26,9 +27,22 @@ test('client script fetches markdown through content endpoint and links previews
   assert.match(CLIENT_JS, /previewUrlForPath\(relativePath\)/);
 });
 
+test('client script fetches and renders linked document navigation', () => {
+  assert.match(CLIENT_JS, /\/documents/);
+  assert.match(CLIENT_JS, /renderDocumentNavigation/);
+  assert.match(CLIENT_JS, /data-preview-path/);
+  assert.match(CLIENT_JS, /setActiveDocument/);
+});
+
 test('client script rewrites relative resource URLs through raw endpoint', () => {
   assert.match(CLIENT_JS, /\/raw\?path=/);
   assert.match(CLIENT_JS, /rewriteRelativeUrls/);
+});
+
+test('stylesheet includes responsive document navigation layout', () => {
+  assert.match(STYLES_CSS, /\.preview-layout/);
+  assert.match(STYLES_CSS, /\.document-nav/);
+  assert.match(STYLES_CSS, /\.document-nav__link\[aria-current="page"\]/);
 });
 
 test('resolvePreviewPath resolves links relative to the current markdown path', () => {

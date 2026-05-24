@@ -71,6 +71,8 @@ const CLIENT_JS = `
 (function () {
   const root = document.getElementById('markdown-root');
   const status = document.getElementById('status');
+  const documentNav = document.getElementById('document-nav');
+  const documentNavList = document.getElementById('document-nav-list');
   const scriptTimeoutMs = 8000;
   const markedSources = [
     '/vendor/marked.min.js'
@@ -194,6 +196,78 @@ ${CLIENT_HELPERS_JS}
     });
   }
 
+  async function loadDocumentNavigation() {
+    if (!documentNav || !documentNavList) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/documents', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const documentTree = await response.json();
+      renderDocumentNavigation(documentTree.documents || []);
+    } catch (_error) {
+      documentNav.hidden = true;
+    }
+  }
+
+  function renderDocumentNavigation(documents) {
+    documentNavList.textContent = '';
+
+    if (!documents.length) {
+      documentNav.hidden = true;
+      return;
+    }
+
+    documentNav.hidden = false;
+    documentNavList.appendChild(renderDocumentNavigationList(documents, 0));
+    setActiveDocument(currentPath);
+  }
+
+  function renderDocumentNavigationList(documents, depth) {
+    const list = document.createElement('ul');
+    list.className = depth === 0 ? 'document-nav__items' : 'document-nav__children';
+
+    for (const documentNode of documents) {
+      const item = document.createElement('li');
+      item.className = 'document-nav__item';
+
+      const link = document.createElement('a');
+      const previewPath = normalizePathSegments(documentNode.path || '');
+      link.className = 'document-nav__link';
+      link.href = previewUrlForPath(previewPath);
+      link.dataset.previewPath = previewPath;
+      link.textContent = documentNode.title || previewPath || 'Markdown';
+      item.appendChild(link);
+
+      if (documentNode.children && documentNode.children.length) {
+        item.appendChild(renderDocumentNavigationList(documentNode.children, depth + 1));
+      }
+
+      list.appendChild(item);
+    }
+
+    return list;
+  }
+
+  function setActiveDocument(path) {
+    if (!documentNavList) {
+      return;
+    }
+
+    const activePath = normalizePathSegments(path);
+    documentNavList.querySelectorAll('.document-nav__link').forEach((link) => {
+      if (normalizePathSegments(link.dataset.previewPath) === activePath) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  }
+
   async function renderMarkdownPath(relativePath) {
     await ensureMarked();
 
@@ -208,6 +282,7 @@ ${CLIENT_HELPERS_JS}
     currentPath = nextPath;
     root.innerHTML = window.marked.parse(markdown, { breaks: false, gfm: true });
     rewriteRelativeUrls(currentPath);
+    setActiveDocument(currentPath);
     await renderMermaid();
   }
 
@@ -251,7 +326,25 @@ ${CLIENT_HELPERS_JS}
   async function render() {
     const initialPath = pathFromSearch(window.location.search);
     window.history.replaceState({ path: initialPath }, '', previewUrlForPath(initialPath));
+    await loadDocumentNavigation();
     await showPath(initialPath, 'Loading markdown renderer...');
+  }
+
+  if (documentNavList) {
+    documentNavList.addEventListener('click', async (event) => {
+      const link = event.target.closest('a[data-preview-path]');
+      if (!link) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const nextPath = normalizePathSegments(link.dataset.previewPath);
+      const rendered = await showPath(nextPath, 'Loading markdown...');
+      if (rendered) {
+        window.history.pushState({ path: currentPath }, '', previewUrlForPath(currentPath));
+      }
+    });
   }
 
   root.addEventListener('click', async (event) => {
@@ -275,6 +368,7 @@ ${CLIENT_HELPERS_JS}
       : pathFromSearch(window.location.search);
 
     await showPath(path, 'Loading markdown...');
+    setActiveDocument(path);
   });
 
   window.addEventListener('DOMContentLoaded', render);
@@ -306,9 +400,73 @@ body {
   line-height: 1.65;
 }
 
-.page-shell {
-  width: min(960px, calc(100% - 32px));
+.preview-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+  width: min(1240px, calc(100% - 32px));
   margin: 32px auto 64px;
+  align-items: start;
+}
+
+.document-nav {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.document-nav__title {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.document-nav__items,
+.document-nav__children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-nav__children {
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+.document-nav__item {
+  margin: 2px 0;
+}
+
+.document-nav__link {
+  display: block;
+  overflow: hidden;
+  padding: 6px 8px;
+  color: var(--text);
+  border-radius: 6px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-nav__link:hover {
+  background: var(--code-bg);
+}
+
+.document-nav__link[aria-current="page"] {
+  color: var(--accent);
+  background: #e8f0ff;
+  font-weight: 700;
+}
+
+.page-shell {
+  min-width: 0;
   padding: 40px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -383,6 +541,21 @@ body {
 }
 
 @media (max-width: 640px) {
+  .preview-layout {
+    display: block;
+    width: 100%;
+    margin: 0;
+  }
+
+  .document-nav {
+    position: static;
+    max-height: 42vh;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
   .page-shell {
     width: 100%;
     margin: 0;

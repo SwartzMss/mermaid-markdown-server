@@ -8,6 +8,7 @@
 
 - 从 Markdown 编辑器或右键菜单一键打开浏览器预览。
 - 渲染普通 Markdown 和 fenced `mermaid` 代码块。
+- 根据当前 Markdown 引用到的其他 Markdown 生成左侧文档导航。
 - 支持停止服务和重新打开预览。
 
 ## 使用方式
@@ -67,3 +68,14 @@ Image path:    Diagram   -> ./images/diagram.png
 
 Markdown 链接会在同一个预览页面内打开。图片和其他相对资源会通过本地预览服务读取。
 为了避免读取到不该访问的文件，类似 `../secret.md` 这种逃出预览根目录的路径会被阻止。
+
+## 文档导航
+
+预览页面左侧会显示从当前入口 Markdown 出发的引用树。插件只会收集 Markdown 链接，例如：
+
+```markdown
+[第一章](chapter-1.md)
+[附录](appendix/a.md)
+```
+
+图片链接不会出现在导航中。循环引用会被自动跳过，避免导航无限展开。

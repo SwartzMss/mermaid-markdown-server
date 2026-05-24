@@ -6,6 +6,7 @@ A VS Code extension that starts a local web server for previewing Markdown files
 
 - Open a browser preview from a Markdown editor or right-click menu.
 - Render normal Markdown and fenced `mermaid` code blocks.
+- Build a left document navigation from Markdown files referenced by the current entry file.
 - Stop and reopen the preview from VS Code commands.
 
 ## VS Code Usage
@@ -65,3 +66,14 @@ Image path:    Diagram   -> ./images/diagram.png
 
 Markdown links open inside the same preview page. Images and other relative files are served through the local preview server.
 Paths outside the preview root, such as `../secret.md`, are blocked.
+
+## Document Navigation
+
+The preview page shows a linked document tree on the left. It starts from the current entry Markdown file and follows Markdown links such as:
+
+```markdown
+[Chapter 1](chapter-1.md)
+[Appendix](appendix/a.md)
+```
+
+Image links are not included in the navigation. Circular references are skipped so the tree does not expand forever.

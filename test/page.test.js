@@ -6,6 +6,8 @@ test('buildHtml includes the viewer shell and configured title', () => {
   const html = buildHtml({ title: 'Architecture Notes' });
 
   assert.match(html, /<title>Architecture Notes<\/title>/);
+  assert.match(html, /id="document-nav"/);
+  assert.match(html, /id="document-nav-list"/);
   assert.match(html, /id="markdown-root"/);
   assert.match(html, /\/assets\/client.js/);
 });

@@ -46,7 +46,9 @@ test('vendorAssetForPath maps browser libraries to local package files', () => {
   assert.equal(vendorAssetForPath('/vendor/unknown.js'), undefined);
 });
 
-test('vendorAssetForPath resolves files installed with package dependencies', () => {
+test('vendorAssetForPath resolves files installed with package dependencies', {
+  skip: !fs.existsSync('node_modules')
+}, () => {
   assert.equal(fs.existsSync(vendorAssetForPath('/vendor/marked.min.js').filePath), true);
   assert.equal(fs.existsSync(vendorAssetForPath('/vendor/mermaid.min.js').filePath), true);
 });
@@ -71,6 +73,60 @@ test('createMarkdownServer reads the updated markdown file without rebinding', a
     assert.deepEqual(await requestServer(server, '/content.md'), {
       statusCode: 200,
       body: '# Second\n'
+    });
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('createMarkdownServer exposes a linked markdown document tree', async () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mermaid-markdown-server-'));
+  const indexFile = path.join(tempRoot, 'index.md');
+  const chapterFile = path.join(tempRoot, 'chapter-1.md');
+  const nestedRoot = path.join(tempRoot, 'appendix');
+  const nestedFile = path.join(nestedRoot, 'a.md');
+  fs.mkdirSync(nestedRoot);
+  fs.writeFileSync(indexFile, [
+    '# Index',
+    '[Chapter One](chapter-1.md)',
+    '![Screenshot](111.png)',
+    '[Outside](../outside.md)'
+  ].join('\n'));
+  fs.writeFileSync(chapterFile, [
+    '# Chapter',
+    '[Appendix](appendix/a.md)',
+    '[Back to Index](index.md)'
+  ].join('\n'));
+  fs.writeFileSync(nestedFile, '# Appendix\n');
+
+  const server = createMarkdownServer({ file: indexFile });
+
+  try {
+    const response = await requestServer(server, '/documents');
+    const tree = JSON.parse(response.body);
+
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(tree, {
+      root: '',
+      documents: [
+        {
+          path: '',
+          title: 'index.md',
+          children: [
+            {
+              path: 'chapter-1.md',
+              title: 'Chapter One',
+              children: [
+                {
+                  path: 'appendix/a.md',
+                  title: 'Appendix',
+                  children: []
+                }
+              ]
+            }
+          ]
+        }
+      ]
     });
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

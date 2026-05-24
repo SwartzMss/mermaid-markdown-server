@@ -11,10 +11,16 @@ function buildHtml({ title }) {
   <script defer src="/assets/client.js"></script>
 </head>
 <body>
-  <main class="page-shell">
-    <div id="status" class="status">Loading markdown...</div>
-    <article id="markdown-root" class="markdown-body"></article>
-  </main>
+  <div class="preview-layout">
+    <aside id="document-nav" class="document-nav" aria-label="Document navigation">
+      <div class="document-nav__title">文档导航</div>
+      <nav id="document-nav-list" class="document-nav__list"></nav>
+    </aside>
+    <main class="page-shell">
+      <div id="status" class="status">Loading markdown...</div>
+      <article id="markdown-root" class="markdown-body"></article>
+    </main>
+  </div>
 </body>
 </html>`;
 }

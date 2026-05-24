@@ -60,6 +60,12 @@ function createMarkdownServer({ file }) {
         return;
       }
 
+      if (url.pathname === '/documents') {
+        const documentTree = await buildDocumentTree({ markdownPath, previewRoot });
+        send(response, 200, 'application/json; charset=utf-8', JSON.stringify(documentTree), { 'Cache-Control': 'no-store' });
+        return;
+      }
+
       if (url.pathname === '/raw') {
         const requestedPath = url.searchParams.get('path');
         if (!requestedPath) {
@@ -154,6 +160,125 @@ function contentTypeForPath(filePath) {
   return types[extension] || 'application/octet-stream';
 }
 
+async function buildDocumentTree({ markdownPath, previewRoot }) {
+  const rootPath = path.resolve(previewRoot);
+  const visited = new Set();
+
+  async function buildNode(relativePath, title) {
+    const contentPath = relativePath
+      ? resolveRootRelativePath(rootPath, relativePath)
+      : path.resolve(markdownPath);
+    const contentKey = path.resolve(contentPath);
+    const normalizedPath = normalizePreviewPath(relativePath);
+    const node = {
+      path: normalizedPath,
+      title: title || path.basename(contentPath),
+      children: []
+    };
+
+    if (visited.has(contentKey)) {
+      return node;
+    }
+    visited.add(contentKey);
+
+    let markdown;
+    try {
+      markdown = await fs.readFile(contentPath, 'utf8');
+    } catch (_error) {
+      return node;
+    }
+
+    const childPaths = new Set();
+    for (const link of extractMarkdownLinks(markdown)) {
+      let resolvedPath;
+      try {
+        resolvedPath = resolveLinkedMarkdownPath(rootPath, contentPath, link.href);
+      } catch (_error) {
+        continue;
+      }
+
+      const childRelativePath = normalizePreviewPath(path.relative(rootPath, resolvedPath));
+      if (!isMarkdownPath(childRelativePath) || childPaths.has(childRelativePath) || visited.has(path.resolve(resolvedPath))) {
+        continue;
+      }
+
+      childPaths.add(childRelativePath);
+      node.children.push(await buildNode(childRelativePath, link.title || path.basename(childRelativePath)));
+    }
+
+    return node;
+  }
+
+  return {
+    root: '',
+    documents: [await buildNode('', path.basename(markdownPath))]
+  };
+}
+
+function extractMarkdownLinks(markdown) {
+  const links = [];
+  const linkPattern = /\[([^\]]+)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g;
+  let match;
+
+  while ((match = linkPattern.exec(markdown)) !== null) {
+    if (match.index > 0 && markdown[match.index - 1] === '!') {
+      continue;
+    }
+
+    const href = decodeUrlPath(match[2]);
+    if (isMarkdownPath(href)) {
+      links.push({
+        title: cleanLinkTitle(match[1]),
+        href
+      });
+    }
+  }
+
+  return links;
+}
+
+function resolveLinkedMarkdownPath(root, fromMarkdownPath, requestedPath) {
+  const normalizedRequest = String(requestedPath || '')
+    .replaceAll('\\', '/')
+    .replace(/^\/+/, '');
+  const rootPath = path.resolve(root);
+  const basePath = path.dirname(path.resolve(fromMarkdownPath));
+  const resolvedPath = path.resolve(basePath, normalizedRequest);
+  const relativePath = path.relative(rootPath, resolvedPath);
+
+  if (relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))) {
+    return resolvedPath;
+  }
+
+  throw new Error('Path is outside the preview root');
+}
+
+function decodeUrlPath(value) {
+  const pathOnly = String(value || '')
+    .split('#')[0]
+    .split('?')[0];
+
+  try {
+    return decodeURIComponent(pathOnly);
+  } catch (_error) {
+    return pathOnly;
+  }
+}
+
+function cleanLinkTitle(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizePreviewPath(value) {
+  return String(value || '').replaceAll('\\', '/');
+}
+
+function isMarkdownPath(filePath) {
+  return typeof filePath === 'string' && /\.(md|markdown)$/i.test(filePath);
+}
+
 function vendorAssetForPath(pathname) {
   const asset = VENDOR_ASSETS[pathname];
   if (!asset) {
@@ -171,5 +296,8 @@ module.exports = {
   getPreviewRoot,
   resolveRootRelativePath,
   contentTypeForPath,
+  buildDocumentTree,
+  extractMarkdownLinks,
+  resolveLinkedMarkdownPath,
   vendorAssetForPath
 };
