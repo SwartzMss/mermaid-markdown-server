@@ -1,8 +1,18 @@
+function decodeUrlPath(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (_error) {
+    return value;
+  }
+}
+
 function pathWithoutSearchAndHash(value) {
-  return String(value || '')
+  const path = String(value || '')
     .split('#')[0]
     .split('?')[0]
     .replaceAll('\\', '/');
+
+  return decodeUrlPath(path);
 }
 
 function normalizePathSegments(value) {
@@ -59,6 +69,7 @@ function pathFromSearch(search) {
 }
 
 const CLIENT_HELPERS_JS = [
+  decodeUrlPath,
   pathWithoutSearchAndHash,
   normalizePathSegments,
   pathDirectory,

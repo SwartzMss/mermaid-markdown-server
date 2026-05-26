@@ -82,6 +82,14 @@ test('searchForPreviewPath and pathFromSearch round trip markdown navigation sta
   assert.equal(pathFromSearch(''), '');
 });
 
+test('resolvePreviewPath decodes markdown renderer encoded unicode hrefs', () => {
+  const renderedHref = '%E5%AD%90%E6%96%87%E6%A1%A3.md';
+  const previewPath = resolvePreviewPath(renderedHref, 'docs/index.md');
+
+  assert.equal(previewPath, 'docs/子文档.md');
+  assert.equal(pathFromSearch(searchForPreviewPath(previewPath)), 'docs/子文档.md');
+});
+
 test('client script integrates markdown navigation with browser history', () => {
   assert.match(CLIENT_JS, /history\.pushState/);
   assert.match(CLIENT_JS, /history\.replaceState/);
