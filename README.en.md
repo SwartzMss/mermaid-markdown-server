@@ -17,11 +17,13 @@ A VS Code extension that starts a local web server for previewing Markdown files
 4. Open the local URL shown by VS Code.
 5. Use `Mermaid Markdown Server: Stop Preview` when finished.
 
-By default, the extension starts:
+By default, the extension starts at:
 
 ```text
 http://localhost:3000
 ```
+
+If that port is already in use, the extension automatically tries the next available port.
 
 ## Settings
 

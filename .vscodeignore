@@ -1,5 +1,8 @@
 .vscode/**
 test/**
 examples/**
+docs/**
+scripts/**
+.github/**
 .gitignore
 *.vsix

@@ -1,6 +1,7 @@
 const { createMarkdownServer } = require('./server');
 
 const PREVIEW_HOST = '0.0.0.0';
+const MAX_PORT = 65535;
 
 function getMarkdownPath(vscode, resourceUri) {
   if (resourceUri && isMarkdownPath(resourceUri.fsPath)) {
@@ -63,6 +64,7 @@ function createExtensionController(vscode, dependencies = {}) {
   let server = null;
   let currentUrl = null;
   let currentPort = null;
+  let currentRequestedPort = null;
   let currentAutoStopMs = 0;
   let autoStopTimer = null;
   let statusBarItem = null;
@@ -97,9 +99,8 @@ function createExtensionController(vscode, dependencies = {}) {
       return;
     }
 
-    if (server && currentPort === options.port && typeof server.setFile === 'function') {
+    if (server && currentRequestedPort === options.port && typeof server.setFile === 'function') {
       server.setFile(file);
-      currentUrl = buildPreviewUrl(options.port);
       currentAutoStopMs = resolveAutoStopMs(options.autoStopAfterMinutes);
       resetAutoStopTimer();
       showRunningStatus(currentUrl);
@@ -118,9 +119,9 @@ function createExtensionController(vscode, dependencies = {}) {
 
     try {
       server = serverFactory({ file });
-      await listen(server, options.port, PREVIEW_HOST);
-      currentUrl = buildPreviewUrl(options.port);
-      currentPort = options.port;
+      currentPort = await listenWithFallback(server, options.port, PREVIEW_HOST);
+      currentRequestedPort = options.port;
+      currentUrl = buildPreviewUrl(currentPort);
       currentAutoStopMs = resolveAutoStopMs(options.autoStopAfterMinutes);
       resetAutoStopTimer();
       showRunningStatus(currentUrl);
@@ -137,6 +138,7 @@ function createExtensionController(vscode, dependencies = {}) {
       server = null;
       currentUrl = null;
       currentPort = null;
+      currentRequestedPort = null;
       currentAutoStopMs = 0;
       clearAutoStopTimer();
       hideRunningStatus();
@@ -161,6 +163,7 @@ function createExtensionController(vscode, dependencies = {}) {
     server = null;
     currentUrl = null;
     currentPort = null;
+    currentRequestedPort = null;
     currentAutoStopMs = 0;
     clearAutoStopTimer();
     hideRunningStatus();
@@ -270,6 +273,33 @@ function listen(server, port, host) {
   });
 }
 
+async function listenWithFallback(server, port, host, maxAttempts = 20) {
+  let nextPort = port;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      await listen(server, nextPort, host);
+      return nextPort;
+    } catch (error) {
+      if (!isPortInUseError(error) || attempt === maxAttempts - 1) {
+        throw error;
+      }
+
+      if (nextPort >= MAX_PORT) {
+        throw new Error(`Unable to bind Mermaid Markdown Server starting at port ${port}.`);
+      }
+
+      nextPort += 1;
+    }
+  }
+
+  throw new Error(`Unable to bind Mermaid Markdown Server starting at port ${port}.`);
+}
+
+function isPortInUseError(error) {
+  return error && error.code === 'EADDRINUSE';
+}
+
 function closeServer(server) {
   if (!server) {
     return Promise.resolve();
@@ -297,5 +327,6 @@ module.exports = {
   isMarkdownPath,
   buildPreviewUrl,
   resolveAutoStopMs,
+  listenWithFallback,
   createExtensionController
 };

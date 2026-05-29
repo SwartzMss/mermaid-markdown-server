@@ -2,7 +2,7 @@
   "name": "mermaid-markdown-server",
   "displayName": "Mermaid Markdown Server",
   "description": "Preview Markdown files with Mermaid diagrams through a local web server from VS Code.",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "publisher": "swartzmss",
   "license": "MIT",
   "icon": "images/icon.png",
@@ -13,7 +13,7 @@
   "main": "./src/extension.js",
   "scripts": {
     "test": "node --test",
-    "package": "vsce package",
+    "package": "node scripts/package-extension.js",
     "publish": "vsce publish"
   },
   "engines": {

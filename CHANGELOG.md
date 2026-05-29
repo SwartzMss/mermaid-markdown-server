@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.13
+
+- Automatically fell back to the next free port when the configured preview port is already in use, which lets multiple VS Code windows run the server at the same time.
+- Kept same-window file switching on the actual bound port after a fallback so the preview does not bounce back to the occupied default port.
+
 ## 1.0.12
 
 - Fixed Markdown body links to Chinese-named child Markdown files by decoding renderer-encoded paths before preview navigation.

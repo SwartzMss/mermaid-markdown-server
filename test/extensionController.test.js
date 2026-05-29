@@ -99,6 +99,90 @@ test('openPreview starts the server before opening the browser when no server is
   assert.deepEqual(opened, ['http://localhost:3000']);
 });
 
+test('openPreview falls back to the next port when the configured port is already in use', async () => {
+  const attempts = [];
+  const opened = [];
+  let errorHandler = null;
+  const controller = createExtensionController(fakeRuntimeVscode(opened), {
+    createMarkdownServer: () => ({
+      once(event, handler) {
+        if (event === 'error') {
+          errorHandler = handler;
+        }
+      },
+      off() {},
+      listen(port, host, callback) {
+        attempts.push({ port, host });
+
+        if (port === 3000) {
+          const error = new Error('bind EADDRINUSE');
+          error.code = 'EADDRINUSE';
+          errorHandler(error);
+          return;
+        }
+
+        callback();
+      },
+      close(callback) {
+        callback();
+      }
+    })
+  });
+
+  await controller.openPreview({ fsPath: 'E:/notes/plan.md' });
+
+  assert.deepEqual(attempts, [
+    { port: 3000, host: '0.0.0.0' },
+    { port: 3001, host: '0.0.0.0' }
+  ]);
+  assert.deepEqual(opened, ['http://localhost:3001']);
+});
+
+test('openPreview keeps reusing the fallback port when switching files in the same window', async () => {
+  const attempts = [];
+  const updatedFiles = [];
+  const opened = [];
+  let errorHandler = null;
+  const controller = createExtensionController(fakeRuntimeVscode(opened), {
+    createMarkdownServer: () => ({
+      once(event, handler) {
+        if (event === 'error') {
+          errorHandler = handler;
+        }
+      },
+      off() {},
+      listen(port, host, callback) {
+        attempts.push({ port, host });
+
+        if (port === 3000) {
+          const error = new Error('bind EADDRINUSE');
+          error.code = 'EADDRINUSE';
+          errorHandler(error);
+          return;
+        }
+
+        callback();
+      },
+      close(callback) {
+        callback();
+      },
+      setFile(file) {
+        updatedFiles.push(file);
+      }
+    })
+  });
+
+  await controller.openPreview({ fsPath: 'E:/notes/first.md' });
+  await controller.openPreview({ fsPath: 'E:/notes/second.md' });
+
+  assert.deepEqual(attempts, [
+    { port: 3000, host: '0.0.0.0' },
+    { port: 3001, host: '0.0.0.0' }
+  ]);
+  assert.deepEqual(updatedFiles, ['E:/notes/second.md']);
+  assert.deepEqual(opened, ['http://localhost:3001', 'http://localhost:3001']);
+});
+
 test('openPreview schedules idle auto-stop with configured minutes', async () => {
   const delays = [];
   const controller = createExtensionController(fakeRuntimeVscode([], {

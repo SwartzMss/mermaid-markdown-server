@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const manifest = require('../package.json');
 
 test('package manifest exposes packaging scripts for CI', () => {
-  assert.equal(manifest.scripts.package, 'vsce package');
+  assert.equal(manifest.scripts.package, 'node scripts/package-extension.js');
   assert.equal(manifest.scripts.publish, 'vsce publish');
 });
 

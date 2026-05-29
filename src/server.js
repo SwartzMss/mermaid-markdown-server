@@ -6,13 +6,11 @@ const { CLIENT_JS, STYLES_CSS } = require('./assets');
 
 const VENDOR_ASSETS = {
   '/vendor/marked.min.js': {
-    packageName: 'marked',
-    relativePath: ['lib', 'marked.umd.js'],
+    filePath: path.resolve(__dirname, '..', 'vendor', 'marked.min.js'),
     contentType: 'application/javascript; charset=utf-8'
   },
   '/vendor/mermaid.min.js': {
-    packageName: 'mermaid',
-    relativePath: ['dist', 'mermaid.min.js'],
+    filePath: path.resolve(__dirname, '..', 'vendor', 'mermaid.min.js'),
     contentType: 'application/javascript; charset=utf-8'
   }
 };
@@ -284,11 +282,7 @@ function vendorAssetForPath(pathname) {
   if (!asset) {
     return undefined;
   }
-
-  return {
-    ...asset,
-    filePath: path.resolve(__dirname, '..', 'node_modules', asset.packageName, ...asset.relativePath)
-  };
+  return asset;
 }
 
 module.exports = {

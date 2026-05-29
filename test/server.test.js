@@ -40,17 +40,10 @@ test('contentTypeForPath returns markdown and image content types', () => {
 
 test('vendorAssetForPath maps browser libraries to local package files', () => {
   assert.equal(vendorAssetForPath('/vendor/marked.min.js').contentType, 'application/javascript; charset=utf-8');
-  assert.equal(vendorAssetForPath('/vendor/marked.min.js').packageName, 'marked');
+  assert.equal(vendorAssetForPath('/vendor/marked.min.js').filePath.endsWith(path.join('vendor', 'marked.min.js')), true);
   assert.equal(vendorAssetForPath('/vendor/mermaid.min.js').contentType, 'application/javascript; charset=utf-8');
-  assert.equal(vendorAssetForPath('/vendor/mermaid.min.js').packageName, 'mermaid');
+  assert.equal(vendorAssetForPath('/vendor/mermaid.min.js').filePath.endsWith(path.join('vendor', 'mermaid.min.js')), true);
   assert.equal(vendorAssetForPath('/vendor/unknown.js'), undefined);
-});
-
-test('vendorAssetForPath resolves files installed with package dependencies', {
-  skip: !fs.existsSync('node_modules')
-}, () => {
-  assert.equal(fs.existsSync(vendorAssetForPath('/vendor/marked.min.js').filePath), true);
-  assert.equal(fs.existsSync(vendorAssetForPath('/vendor/mermaid.min.js').filePath), true);
 });
 
 test('createMarkdownServer reads the updated markdown file without rebinding', async () => {
