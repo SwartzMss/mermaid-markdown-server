@@ -52,6 +52,7 @@ test('stylesheet balances navigation and reading proportions', () => {
   assert.match(STYLES_CSS, /\.markdown-body \{\s+width: 100%;\s+max-width: none;/);
   assert.match(STYLES_CSS, /\.markdown-body > p,/);
   assert.match(STYLES_CSS, /\.markdown-body > blockquote/);
+  assert.match(STYLES_CSS, /\.markdown-body > pre/);
   assert.match(STYLES_CSS, /font-size: 17px/);
   assert.match(STYLES_CSS, /line-height: 1\.72/);
   assert.match(STYLES_CSS, /\.mermaid svg/);

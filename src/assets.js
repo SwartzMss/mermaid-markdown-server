@@ -528,7 +528,8 @@ body {
 .markdown-body > p,
 .markdown-body > ul,
 .markdown-body > ol,
-.markdown-body > blockquote {
+.markdown-body > blockquote,
+.markdown-body > pre {
   max-width: 1120px;
   margin-left: auto;
   margin-right: auto;

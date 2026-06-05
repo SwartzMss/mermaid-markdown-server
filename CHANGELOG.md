@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.15
+
+- Restored normal Markdown code blocks to the centered reading width after the wide-content layout change.
+- Kept Mermaid diagrams wide so complex diagrams can still use the full preview area.
+
 ## 1.0.14
 
 - Let wide Markdown content use the full preview area instead of being constrained to the centered reading column.
