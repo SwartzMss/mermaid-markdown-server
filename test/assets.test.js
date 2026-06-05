@@ -57,6 +57,8 @@ test('stylesheet balances navigation and reading proportions', () => {
   assert.match(STYLES_CSS, /display: block;\s+overflow: auto;\s+width: 100%;\s+border-collapse: collapse;/);
   assert.match(STYLES_CSS, /font-size: 17px/);
   assert.match(STYLES_CSS, /line-height: 1\.72/);
+  assert.match(STYLES_CSS, /margin: 28px 0 28px auto/);
+  assert.match(STYLES_CSS, /width: min\(100%, calc\(50% \+ 560px\)\)/);
   assert.match(STYLES_CSS, /\.mermaid svg/);
   assert.match(STYLES_CSS, /min-width: 100%/);
   assert.match(STYLES_CSS, /max-width: none/);

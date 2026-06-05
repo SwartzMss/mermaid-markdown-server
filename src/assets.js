@@ -574,10 +574,10 @@ body {
 }
 
 .mermaid {
-  margin: 28px 0;
+  margin: 28px 0 28px auto;
   overflow: auto;
   text-align: center;
-  width: 100%;
+  width: min(100%, calc(50% + 560px));
 }
 
 .mermaid svg {

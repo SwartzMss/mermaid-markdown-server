@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.17
+
+- Aligned Mermaid diagrams with the centered reading column on the left edge.
+- Kept diagrams expanded toward the right side so complex charts still have more horizontal room.
+
 ## 1.0.16
 
 - Aligned Markdown tables with the centered reading width used by prose and code blocks.
