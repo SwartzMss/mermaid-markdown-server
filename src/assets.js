@@ -482,23 +482,23 @@ body {
 
 .page-shell {
   min-width: 0;
-  padding: clamp(24px, 4vw, 48px);
+  padding: clamp(24px, 3vw, 40px);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
 .markdown-body {
-  max-width: 1120px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   font-size: 17px;
   line-height: 1.72;
 }
 
 .status {
-  max-width: 1120px;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  max-width: none;
   margin-bottom: 16px;
   color: var(--muted);
 }
@@ -510,8 +510,9 @@ body {
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3 {
+  max-width: 1120px;
   line-height: 1.25;
-  margin: 1.6em 0 0.6em;
+  margin: 1.6em auto 0.6em;
 }
 
 .markdown-body h1:first-child,
@@ -522,6 +523,15 @@ body {
 
 .markdown-body a {
   color: var(--accent);
+}
+
+.markdown-body > p,
+.markdown-body > ul,
+.markdown-body > ol,
+.markdown-body > blockquote {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .markdown-body pre {
@@ -563,11 +573,12 @@ body {
   margin: 28px 0;
   overflow: auto;
   text-align: center;
+  width: 100%;
 }
 
 .mermaid svg {
-  min-width: min(100%, 920px);
-  max-width: 100%;
+  min-width: 100%;
+  max-width: none;
   height: auto;
 }
 

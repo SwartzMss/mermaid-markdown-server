@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.14
+
+- Let wide Markdown content use the full preview area instead of being constrained to the centered reading column.
+- Kept normal prose readable while allowing Mermaid diagrams, tables, and code blocks to stretch across the available width.
+
 ## 1.0.13
 
 - Automatically fell back to the next free port when the configured preview port is already in use, which lets multiple VS Code windows run the server at the same time.
