@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.16
+
+- Aligned Markdown tables with the centered reading width used by prose and code blocks.
+- Kept oversized tables scrollable within the table area while Mermaid diagrams remain full-width.
+
 ## 1.0.15
 
 - Restored normal Markdown code blocks to the centered reading width after the wide-content layout change.

@@ -529,7 +529,8 @@ body {
 .markdown-body > ul,
 .markdown-body > ol,
 .markdown-body > blockquote,
-.markdown-body > pre {
+.markdown-body > pre,
+.markdown-body > table {
   max-width: 1120px;
   margin-left: auto;
   margin-right: auto;
@@ -560,6 +561,8 @@ body {
 }
 
 .markdown-body table {
+  display: block;
+  overflow: auto;
   width: 100%;
   border-collapse: collapse;
 }
